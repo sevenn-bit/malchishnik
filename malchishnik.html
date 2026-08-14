@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Особый допуск</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* --- Акт 1: милая шторка --- */
+    --cream:#FFF3E4;
+    --paper:#FFFFFF;
+    --ink:#3B2A39;
+    --rose:#F0879A;
+    --sky:#8FD3E8;
+    --butter:#FBCB5C;
+    --sage:#A8C99B;
+    --accent:#E8547A;
+    /* --- Акт 2: ночь перед объявой --- */
+    --night:#1B1B3A;
+    --night-2:#141428;
+    /* --- Акт 3: слом --- */
+    --void:#0A0A0C;
+    --blood:#D21F42;
+    --toxic:#35FFA0;
+    --fog:#C9C9CE;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Nunito',sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    overflow-x:hidden;
+    min-height:100vh;
+  }
+
+  .screen{
+    min-height:100vh;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:8vh 6vw;
+    text-align:center;
+    position:relative;
+  }
+
+  /* ================= GATE ================= */
+  #gateScreen{
+    background:
+      radial-gradient(circle at 15% 20%, rgba(240,135,154,.25), transparent 45%),
+      radial-gradient(circle at 85% 15%, rgba(143,211,232,.28), transparent 45%),
+      radial-gradient(circle at 50% 90%, rgba(251,203,92,.22), transparent 50%),
+      var(--cream);
+    transition:opacity .6s ease;
+    z-index:5;
+  }
+  #gateScreen.hide{ opacity:0; pointer-events:none; position:fixed; inset:0; }
+
+  .balloon{
+    position:absolute;
+    width:54px; height:66px;
+    border-radius:50% 50% 50% 50% / 55% 55% 45% 45%;
+    opacity:.85;
+    animation:float 7s ease-in-out infinite;
+  }
+  .balloon::after{
+    content:'';
+    position:absolute;
+    left:50%; top:100%;
+    width:2px; height:26px;
+    background:rgba(59,42,57,.35);
+    transform:translateX(-50%);
+  }
+  .balloon--1{ background:var(--rose); left:8%; top:14%; animation-delay:0s; }
+  .balloon--2{ background:var(--sky); right:10%; top:10%; animation-delay:1.2s; }
+  .balloon--3{ background:var(--butter); left:14%; bottom:12%; animation-delay:2.1s; }
+  .balloon--4{ background:var(--sage); right:12%; bottom:16%; animation-delay:.6s; }
+  @keyframes float{
+    0%,100%{ transform:translateY(0) rotate(-3deg); }
+    50%{ transform:translateY(-18px) rotate(3deg); }
+  }
+
+  .eyebrow{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    letter-spacing:.04em;
+    color:var(--accent);
+    font-size:clamp(.85rem,3vw,1rem);
+    text-transform:uppercase;
+    margin:0 0 .4rem;
+  }
+  .gate-title{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:clamp(1.6rem,7vw,2.4rem);
+    margin:0 0 .3rem;
+    line-height:1.15;
+  }
+  .gate-sub{
+    font-size:clamp(.95rem,3.6vw,1.1rem);
+    color:var(--ink);
+    opacity:.75;
+    margin:0 0 1.6rem;
+    max-width:34ch;
+  }
+
+  .puzzle-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:7px;
+    width:min(76vw,300px);
+    aspect-ratio:1/1;
+    margin:0 auto 1.4rem;
+    padding:10px;
+    background:var(--paper);
+    border-radius:20px;
+    box-shadow:0 14px 30px -12px rgba(59,42,57,.28);
+  }
+  .tile{
+    --rot:0deg;
+    position:relative;
+    border:none;
+    padding:0;
+    border-radius:9px;
+    cursor:pointer;
+    background-repeat:no-repeat;
+    background-color:var(--cream);
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.6);
+    transform:rotate(var(--rot));
+    transition:transform .38s cubic-bezier(.34,1.56,.64,1);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .tile:active{ filter:brightness(.92); }
+
+  .puzzle-hint{
+    font-size:.85rem;
+    opacity:.6;
+    margin:0 0 .2rem;
+  }
+
+  #confettiLayer{
+    position:fixed; inset:0;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:20;
+  }
+  .confetti-piece{
+    position:absolute; top:-12px;
+    width:8px; height:14px;
+    border-radius:2px;
+    animation-name:confettiFall;
+    animation-timing-function:ease-in;
+    animation-fill-mode:forwards;
+  }
+  @keyframes confettiFall{
+    to{ transform:translateY(112vh) rotate(420deg); opacity:0; }
+  }
+
+  /* ================= MAIN (ночь) ================= */
+  #mainScreen{
+    display:none;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(251,203,92,.10), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(240,135,154,.08), transparent 45%),
+      linear-gradient(180deg, var(--night) 0%, var(--night-2) 100%);
+    color:var(--cream);
+    min-height:100vh;
+  }
+  #mainScreen.show{ display:flex; }
+
+  .main-inner{ position:relative; z-index:2; width:100%; }
+
+  .date-readout{
+    font-family:'Space Mono',monospace;
+    font-weight:700;
+    font-size:clamp(1.9rem,9vw,3.2rem);
+    letter-spacing:.02em;
+    display:inline-flex;
+    gap:2px;
+    color:var(--butter);
+    margin:.6rem 0 1.2rem;
+  }
+  .date-readout .dot{ opacity:.5; margin:0 2px; }
+  .digit{ display:inline-block; width:1ch; text-align:center; }
+  .digit.landed{ color:#fff; }
+
+  .hint{
+    font-size:clamp(.9rem,3.4vw,1rem);
+    opacity:.65;
+    max-width:32ch;
+    margin:0 auto 1.8rem;
+  }
+
+  .open-btn{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:1.05rem;
+    padding:.9rem 2.4rem;
+    border:none;
+    border-radius:999px;
+    background:var(--accent);
+    color:#fff;
+    cursor:pointer;
+    box-shadow:0 10px 24px -8px rgba(232,84,122,.55);
+  }
+  .open-btn:disabled{ opacity:.55; }
+
+  .captions{
+    min-height:3.4em;
+    max-width:30ch;
+    margin:1.6rem auto 0;
+    font-size:clamp(.95rem,3.6vw,1.05rem);
+    opacity:0;
+    transition:opacity .25s ease;
+  }
+  .captions.show{ opacity:1; }
+
+  .stamp{
+    position:absolute;
+    left:50%; top:38%;
+    transform:translate(-50%,-50%) rotate(-8deg) scale(.7);
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:clamp(2.2rem,11vw,4.2rem);
+    color:var(--blood);
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    opacity:0;
+    text-shadow:0 0 18px rgba(210,31,66,.6);
+    pointer-events:none;
+    z-index:3;
+  }
+  .stamp.show{ animation:stampFlash 1.5s steps(1) 3; }
+  @keyframes stampFlash{
+    0%,100%{ opacity:0; }
+    10%,30%,50%{ opacity:1; transform:translate(-50%,-50%) rotate(-8deg) scale(1); }
+    20%,40%{ opacity:0; }
+  }
+
+  .meme-video{
+    position:fixed; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    z-index:15;
+    background:#000;
+  }
+
+  /* ---- глитч-состояние ---- */
+  .scanlines{
+    position:fixed; inset:0;
+    pointer-events:none;
+    background:repeating-linear-gradient(to bottom, rgba(255,255,255,.05) 0 1px, transparent 1px 3px);
+    opacity:0;
+    z-index:8;
+  }
+  body.glitching .scanlines{ opacity:1; }
+
+  body.glitching .main-inner{ animation:shake .15s infinite; }
+  @keyframes shake{
+    0%{ transform:translate(0,0); }
+    25%{ transform:translate(-4px,3px); }
+    50%{ transform:translate(3px,-3px); }
+    75%{ transform:translate(-3px,2px); }
+    100%{ transform:translate(0,0); }
+  }
+  body.glitching .date-readout{ animation:rgbSplit .3s infinite; }
+  @keyframes rgbSplit{
+    0%{ text-shadow:2px 0 var(--blood), -2px 0 var(--toxic); }
+    50%{ text-shadow:-3px 0 var(--blood), 3px 0 var(--toxic); }
+    100%{ text-shadow:2px 0 var(--blood), -2px 0 var(--toxic); }
+  }
+  body.glitching #mainScreen{
+    transition:background .4s ease;
+    background:linear-gradient(180deg, var(--void) 0%, #050506 100%);
+  }
+
+  /* ---- финальный слом ---- */
+  body.broken .main-inner{ opacity:0; transition:opacity .5s ease; }
+  body.broken #mainScreen{ background:var(--void); }
+
+  .crack-overlay{
+    position:fixed; inset:0;
+    z-index:9;
+    opacity:0;
+    transition:opacity .15s ease;
+    pointer-events:none;
+  }
+  body.glitching .crack-overlay{ opacity:1; }
+  .crack-svg{ width:100%; height:100%; }
+  .crack-svg path{
+    fill:none;
+    stroke:var(--fog);
+    stroke-width:1.4;
+    stroke-linecap:round;
+    opacity:.8;
+    transition:stroke-dashoffset .5s ease-out;
+  }
+  /* трещины прорисовываются одна за одной */
+  body.glitching .crack-svg path:nth-child(1){ transition-delay:.0s; stroke-dashoffset:0 !important; }
+  body.glitching .crack-svg path:nth-child(2){ transition-delay:.05s; stroke-dashoffset:0 !important; }
+  body.glitching .crack-svg path:nth-child(3){ transition-delay:.12s; stroke-dashoffset:0 !important; }
+  body.glitching .crack-svg path:nth-child(4){ transition-delay:.18s; stroke-dashoffset:0 !important; }
+  body.glitching .crack-svg path:nth-child(5){ transition-delay:.26s; stroke-dashoffset:0 !important; }
+  body.glitching .crack-svg path:nth-child(6){ transition-delay:.34s; stroke-dashoffset:0 !important; }
+  body.glitching .crack-svg path:nth-child(7){ transition-delay:.4s; stroke-dashoffset:0 !important; }
+  body.glitching .crack-svg path:nth-child(8){ transition-delay:.46s; stroke-dashoffset:0 !important; }
+  body.glitching .crack-svg path:nth-child(9){ transition-delay:.52s; stroke-dashoffset:0 !important; }
+  body.glitching .crack-svg path:nth-child(10){ transition-delay:.58s; stroke-dashoffset:0 !important; }
+
+  /* ---- осколки экрана, разлетающиеся в стороны ---- */
+  .shatter-layer{ position:fixed; inset:0; z-index:10; pointer-events:none; }
+  .shard{
+    position:absolute; inset:0;
+    background:linear-gradient(160deg, var(--night) 0%, var(--night-2) 100%);
+    opacity:0;
+    transition:transform 1.1s cubic-bezier(.6,0,.85,.35), opacity .9s ease .5s;
+    will-change:transform,opacity;
+  }
+  body.glitching .shard{ opacity:1; }
+  body.broken .shard{ opacity:0; }
+  .shard:nth-child(1){ clip-path:polygon(0% 0%,40% 0%,25% 35%,0% 45%); }
+  body.broken .shard:nth-child(1){ transform:translate(-65%,-35%) rotate(-28deg); transition-delay:.02s; }
+  .shard:nth-child(2){ clip-path:polygon(40% 0%,100% 0%,100% 20%,55% 30%,25% 35%); }
+  body.broken .shard:nth-child(2){ transform:translate(55%,-55%) rotate(24deg); transition-delay:.1s; }
+  .shard:nth-child(3){ clip-path:polygon(0% 45%,25% 35%,55% 30%,45% 65%,15% 75%,0% 70%); }
+  body.broken .shard:nth-child(3){ transform:translate(-60%,32%) rotate(-16deg); transition-delay:.18s; }
+  .shard:nth-child(4){ clip-path:polygon(100% 20%,100% 55%,60% 60%,45% 65%,55% 30%); }
+  body.broken .shard:nth-child(4){ transform:translate(60%,28%) rotate(20deg); transition-delay:.26s; }
+  .shard:nth-child(5){ clip-path:polygon(0% 70%,15% 75%,45% 65%,35% 100%,0% 100%); }
+  body.broken .shard:nth-child(5){ transform:translate(-50%,60%) rotate(-13deg); transition-delay:.34s; }
+  .shard:nth-child(6){ clip-path:polygon(15% 75%,45% 65%,60% 60%,100% 55%,100% 100%,35% 100%); }
+  body.broken .shard:nth-child(6){ transform:translate(50%,65%) rotate(17deg); transition-delay:.4s; }
+
+  .final-text{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding-top:24vh;
+    z-index:12;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  /* якорь болтается свободно на тросах, конечный угол НЕ ноль —
+     табличка повисает криво, как будто один трос оборвало сильнее */
+  .hang-rig{
+    position:relative;
+    transform-origin:50% -58vh;
+    transform:translateY(-140vh) rotate(0deg);
+  }
+  body.broken .hang-rig{
+    animation: fallAndHang 1.7s forwards;
+  }
+  @keyframes fallAndHang{
+    0%{   transform:translateY(-140vh) rotate(0deg);   animation-timing-function:cubic-bezier(.55,0,.85,.35); }
+    56%{  transform:translateY(0)      rotate(0deg);    animation-timing-function:ease-out; }
+    64%{  transform:translateY(0)      rotate(-34deg); }
+    72%{  transform:translateY(0)      rotate(-19deg); }
+    80%{  transform:translateY(0)      rotate(-27deg); }
+    88%{  transform:translateY(0)      rotate(-21deg); }
+    100%{ transform:translateY(0)      rotate(-24deg); }
+  }
+  /* лёгкое дрожание висящей криво таблички — не возврат к нулю, а покачивание вокруг конечного угла */
+  body.broken .hang-rig{ animation: fallAndHang 1.7s forwards, dangle 4.4s ease-in-out 1.7s infinite; }
+  @keyframes dangle{
+    0%,100%{ transform:translateY(0) rotate(-24deg); }
+    50%{     transform:translateY(0) rotate(-20deg); }
+  }
+
+  /* провода — крепятся ВПЛОТНУЮ к верхним углам таблички, одна короче
+     другой (будто именно там и оборвало), идут под наклоном вверх */
+  /* провода — отдельный неподвижный слой на весь экран, никак не привязанный
+     к падению таблички: визуально они уже висели тут, оборванные, и табличка
+     просто зацепилась за их нижние концы. Форма (провисание, покачивание)
+     считается в JS каждый кадр, чтобы конец всегда точно совпадал с болтом. */
+  .wires-svg{
+    position:fixed;
+    inset:0;
+    width:100%; height:100%;
+    z-index:11;
+    opacity:0;
+    transition:opacity .3s ease;
+  }
+  body.broken .wires-svg{ opacity:1; }
+  .wire-path{
+    fill:none;
+    stroke:#9a9aa0;
+    stroke-width:2.5;
+    stroke-linecap:round;
+    opacity:.8;
+  }
+
+  /* сама вывеска — как настоящая табличка магазина: рамка, фон, лёгкая тень от лампы внутри */
+  .sign-board{
+    position:relative;
+    padding:.85em 1.4em;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 40%),
+      #101014;
+    border:3px solid #6d6d74;
+    border-radius:6px;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,.6),
+      0 18px 40px -10px rgba(0,0,0,.7),
+      inset 0 0 24px rgba(0,0,0,.5);
+  }
+  /* болты по углам таблички — куда крепятся тросы (настоящие элементы,
+     не псевдо-, чтобы JS мог точно считать их экранные координаты) */
+  .bolt{
+    position:absolute;
+    top:-6px;
+    width:10px; height:10px;
+    border-radius:50%;
+    background:#4a4a50;
+    box-shadow:0 0 0 2px #26262a, inset 0 1px 1px rgba(255,255,255,.25);
+  }
+  .bolt--l{ left:6px; }
+  .bolt--r{ right:6px; }
+
+  .final-word{
+    display:block;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:clamp(2.6rem,13vw,5.2rem);
+    color:#EDEDED;
+    letter-spacing:.05em;
+    text-shadow:2px 0 var(--blood), -2px 0 var(--toxic);
+  }
+  body.broken .sign-board{ animation:impactSquash 1.7s forwards; }
+  @keyframes impactSquash{
+    0%,53%{ transform:scale(1,1); }
+    56%{  transform:scale(1.1,.8); animation-timing-function:cubic-bezier(.34,1.56,.64,1); }
+    64%{  transform:scale(.97,1.05); }
+    72%{  transform:scale(1.02,.98); }
+    80%{  transform:scale(.99,1.01); }
+    100%{ transform:scale(1,1); }
+  }
+
+  /* ---- имена организаторов — как неоновые вывески на обломках ---- */
+  .credits{ position:fixed; inset:0; z-index:13; pointer-events:none; }
+  .credit{
+    --neon:#fff;
+    position:absolute;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:clamp(.8rem,2.6vw,1.05rem);
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--neon);
+    opacity:0;
+    transform:rotate(var(--r,0deg)) scale(.55);
+    transition:transform .5s cubic-bezier(.34,1.56,.64,1);
+    text-shadow:
+      0 0 4px var(--neon),
+      0 0 10px var(--neon),
+      0 0 24px var(--neon),
+      0 0 44px var(--neon);
+  }
+  .credit.on{ transform:rotate(var(--r,0deg)) scale(1); }
+
+
+  @media (prefers-reduced-motion: reduce){
+    .balloon, .digit, body.glitching .main-inner, body.glitching .date-readout, .hang-rig, .sign-board{
+      animation:none !important;
+    }
+    .hang-rig{ transform:translateY(0) rotate(-24deg) !important; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ================= ЭКРАН 1 — ШТОРКА / ДОКАЗАТЕЛЬСТВО ДРУЖБЫ ================= -->
+  <section id="gateScreen" class="screen">
+    <div class="balloon balloon--1"></div>
+    <div class="balloon balloon--2"></div>
+    <div class="balloon balloon--3"></div>
+    <div class="balloon balloon--4"></div>
+
+    <p class="eyebrow">Вход только для своих</p>
+    <h1 class="gate-title">Особый допуск 🎈</h1>
+    <p class="gate-sub">Прежде чем пустить дальше — докажи, что ты в теме. Крути квадратики, пока фото не соберётся как надо.</p>
+
+    <div class="puzzle-grid" id="puzzleGrid"></div>
+    <p class="puzzle-hint">тапай по квадратику — он повернётся</p>
+  </section>
+
+  <div id="confettiLayer"></div>
+  <audio id="bgMusic" preload="none"></audio>
+
+  <!-- ================= ЭКРАН 2 — ДАТА / ГОЛОС / СЛОМ ================= -->
+  <section id="mainScreen" class="screen">
+    <div class="scanlines"></div>
+    <div class="main-inner">
+      <p class="eyebrow" style="color:var(--butter)">Помню как сейчас</p>
+      <div class="date-readout" id="dateReadout">
+        <span class="digit" data-i="0">1</span><span class="digit" data-i="1">6</span><span class="dot">.</span><span class="digit" data-i="2">0</span><span class="digit" data-i="3">5</span><span class="dot">.</span><span class="digit" data-i="4">2</span><span class="digit" data-i="5">0</span><span class="digit" data-i="6">0</span><span class="digit" data-i="7">6</span>
+      </div>
+      <p class="hint">двадцать лет назад родился один хороший человек. пора бы уже что-то устроить</p>
+      <button id="openBtn" class="open-btn">Открыть</button>
+      <div class="captions" id="captions"></div>
+      <div class="stamp" id="stamp">Или нет</div>
+    </div>
+  </section>
+
+  <div class="shatter-layer">
+    <div class="shard"></div>
+    <div class="shard"></div>
+    <div class="shard"></div>
+    <div class="shard"></div>
+    <div class="shard"></div>
+    <div class="shard"></div>
+  </div>
+
+  <div class="crack-overlay">
+    <svg class="crack-svg" viewBox="0 0 400 800" preserveAspectRatio="none">
+      <path d="M200 0 L188 120 L230 180 L170 260 L210 330 L150 420 L195 500 L140 600 L180 700 L160 800"/>
+      <path d="M188 120 L90 160 L40 140"/>
+      <path d="M188 120 L300 150 L360 110"/>
+      <path d="M230 180 L320 220 L380 200"/>
+      <path d="M170 260 L60 300 L10 260"/>
+      <path d="M210 330 L330 360 L390 400"/>
+      <path d="M150 420 L40 460 L0 500"/>
+      <path d="M195 500 L310 540 L350 600"/>
+      <path d="M140 600 L60 660 L80 730"/>
+      <path d="M180 700 L280 740 L260 800"/>
+    </svg>
+  </div>
+
+  <div class="final-text">
+    <svg class="wires-svg" id="wiresSvg" preserveAspectRatio="none">
+      <path id="wireL" class="wire-path"/>
+      <path id="wireR" class="wire-path"/>
+    </svg>
+    <div class="hang-rig" id="hangRig">
+      <div class="sign-board" id="signBoard">
+        <span class="bolt bolt--l" id="boltL"></span>
+        <span class="bolt bolt--r" id="boltR"></span>
+        <span class="final-word">Жди</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="credits">
+    <span class="credit" style="top:8%; left:9%; --r:-8deg;">Сергей</span>
+    <span class="credit" style="top:13%; right:8%; --r:6deg;">Андрей</span>
+    <span class="credit" style="top:44%; left:4%; --r:-5deg;">Илья</span>
+    <span class="credit" style="top:47%; right:5%; --r:5deg;">Роман</span>
+    <span class="credit" style="bottom:30%; left:11%; --r:7deg;">Артём</span>
+    <span class="credit" style="bottom:26%; right:9%; --r:-6deg;">Богдан</span>
+    <span class="credit" style="bottom:9%; left:28%; --r:-3deg;">Иван</span>
+    <span class="credit" style="bottom:11%; right:26%; --r:4deg;">Никита</span>
+  </div>
+
+<script>
+  // === СЮДА ПОДСТАВИШЬ СВОИ ФАЙЛЫ, КОГДА БУДУТ ГОТОВЫ ===
+  const ASSETS = {
+    puzzleImage: null,   // напр. 'photo.jpg' — фото для ребуса
+    voiceAudio:  null,   // напр. 'voice.mp3' — твоя запись
+    memeVideo:   null,   // напр. 'meme.mp4' — ролик "или нет"
+    bgMusic:     null    // напр. 'music.mp3' — фоновая музыка (без АП)
+  };
+
+  /* ==========================================================
+     ЗВУК: всё генерируется через Web Audio API прямо в браузере —
+     ни одного файла, ни одного вопроса про авторские права.
+     Если всё же пришлёшь свой трек в ASSETS.bgMusic — сайт сам
+     переключится на него вместо синтезированной музыки.
+  ========================================================== */
+  let actx, musicBus, sfxBus;
+  function ensureAudio(){
+    if(!actx){
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      musicBus = actx.createGain(); musicBus.gain.value = 0.0001; musicBus.connect(actx.destination);
+      sfxBus = actx.createGain(); sfxBus.gain.value = 0.6; sfxBus.connect(actx.destination);
+    }
+    if(actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+
+  function tone(freq, dur, type, vol, when, bus){
+    const c = ensureAudio();
+    const t0 = c.currentTime + (when||0);
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(vol,0.001), t0+0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    osc.connect(g); g.connect(bus || sfxBus);
+    osc.start(t0); osc.stop(t0+dur+0.05);
+    return osc;
+  }
+
+  function noiseBurst(dur, vol, when, freq, q, bus){
+    const c = ensureAudio();
+    const t0 = c.currentTime + (when||0);
+    const buf = c.createBuffer(1, Math.max(1,Math.floor(c.sampleRate*dur)), c.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+    const src = c.createBufferSource(); src.buffer = buf;
+    const filt = c.createBiquadFilter(); filt.type = 'bandpass'; filt.frequency.value = freq||2500; filt.Q.value = q||1;
+    const g = c.createGain();
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    src.connect(filt); filt.connect(g); g.connect(bus || sfxBus);
+    src.start(t0);
+  }
+
+  /* ---- фоновая мелодия: тёплый бегущий мотивчик, как в музыкальной шкатулке ---- */
+  const MUSIC_STEPS = [523.25,659.25,783.99,659.25,587.33,783.99,659.25,523.25]; // C E G E D G E C
+  let musicTimer = null;
+  function startSynthMusic(){
+    if(musicTimer || ASSETS.bgMusic) return;
+    ensureAudio();
+    musicBus.gain.cancelScheduledValues(actx.currentTime);
+    musicBus.gain.setValueAtTime(0.0001, actx.currentTime);
+    musicBus.gain.linearRampToValueAtTime(0.4, actx.currentTime+0.7);
+    let step = 0;
+    const playStep = () => {
+      tone(MUSIC_STEPS[step % MUSIC_STEPS.length], 0.32, 'triangle', 0.5, 0, musicBus);
+      if(step % 2 === 1) noiseBurst(0.04, 0.06, 0, 6000, 3, musicBus); // лёгкий шейкер на слабую долю
+      step++;
+    };
+    playStep();
+    musicTimer = setInterval(playStep, 430);
+  }
+
+  function duckMusic(to, ms){
+    if(ASSETS.bgMusic){ fadeVolume(document.getElementById('bgMusic'), to, ms); return; }
+    if(!musicBus) return;
+    const c = ensureAudio();
+    musicBus.gain.cancelScheduledValues(c.currentTime);
+    musicBus.gain.setValueAtTime(musicBus.gain.value, c.currentTime);
+    musicBus.gain.linearRampToValueAtTime(Math.max(to,0.0001), c.currentTime + ms/1000);
+  }
+  function stopMusic(ms){
+    duckMusic(0, ms);
+    setTimeout(() => { if(musicTimer){ clearInterval(musicTimer); musicTimer = null; } }, ms+50);
+  }
+
+  let musicStarted = false;
+  function startBgMusicOnce(){
+    if(musicStarted) return;
+    musicStarted = true;
+    if(ASSETS.bgMusic){
+      const music = document.getElementById('bgMusic');
+      music.src = ASSETS.bgMusic; music.loop = true; music.volume = 0.55;
+      music.play().catch(()=>{});
+    } else {
+      startSynthMusic();
+    }
+  }
+  // запускаем по самому первому тапу по странице — так браузер точно разрешит звук
+  document.addEventListener('pointerdown', startBgMusicOnce, { once:true });
+
+  function fadeVolume(el, to, duration){
+    if(!el || !el.src) return;
+    const from = el.volume;
+    const steps = 20;
+    const stepTime = duration/steps;
+    let i = 0;
+    const iv = setInterval(() => {
+      i++;
+      el.volume = Math.max(0, Math.min(1, from + (to-from)*(i/steps)));
+      if(i >= steps){ clearInterval(iv); if(to===0) el.pause(); }
+    }, stepTime);
+  }
+
+  /* ---- звуковые эффекты под конкретные события на экране ---- */
+  function reelWhirr(totalDur){
+    const c = ensureAudio();
+    const t0 = c.currentTime;
+    const osc = c.createOscillator();
+    const lfo = c.createOscillator();
+    const lfoGain = c.createGain();
+    const g = c.createGain();
+    osc.type = 'sawtooth'; osc.frequency.value = 220;
+    lfo.frequency.value = 14; lfoGain.gain.value = 60;
+    lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(0.12, t0+0.15);
+    g.gain.setValueAtTime(0.12, t0+Math.max(totalDur-0.25,0.15));
+    g.gain.linearRampToValueAtTime(0.0001, t0+totalDur);
+    osc.connect(g); g.connect(sfxBus);
+    osc.start(t0); lfo.start(t0);
+    osc.stop(t0+totalDur+0.05); lfo.stop(t0+totalDur+0.05);
+  }
+
+  function riseTension(dur){
+    const c = ensureAudio();
+    const t0 = c.currentTime;
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(60, t0);
+    osc.frequency.exponentialRampToValueAtTime(140, t0+dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(0.18, t0+dur*0.8);
+    g.gain.linearRampToValueAtTime(0.0001, t0+dur);
+    osc.connect(g); g.connect(sfxBus);
+    osc.start(t0); osc.stop(t0+dur+0.05);
+  }
+
+  function shatterSound(){
+    const c = ensureAudio();
+    // тяжёлый низкий удар — вес разгрома
+    noiseBurst(0.5, 0.35, 0, 120, 0.8);
+    tone(55, 0.6, 'sine', 0.3, 0);
+    // основной широкополосный хруст
+    noiseBurst(0.45, 0.4, 0.02, 1800, 0.9);
+    // скрежет — резкий свип вниз, как рвущийся металл/стекло
+    const scr = c.createOscillator();
+    const scrGain = c.createGain();
+    scr.type = 'sawtooth';
+    scr.frequency.setValueAtTime(1400, c.currentTime);
+    scr.frequency.exponentialRampToValueAtTime(220, c.currentTime+0.35);
+    scrGain.gain.setValueAtTime(0.18, c.currentTime);
+    scrGain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime+0.4);
+    scr.connect(scrGain); scrGain.connect(sfxBus);
+    scr.start(c.currentTime); scr.stop(c.currentTime+0.45);
+    // осколки, разлетающиеся в первые доли секунды
+    for(let i=0;i<10;i++){
+      const t = Math.random()*0.55;
+      const f = 1400+Math.random()*2200;
+      tone(f, 0.1+Math.random()*0.12, Math.random()>0.5?'sine':'triangle', 0.06+Math.random()*0.08, t);
+    }
+    // и мелкий звон осколков, оседающих чуть позже
+    for(let i=0;i<5;i++){
+      const t = 0.4+Math.random()*0.5;
+      noiseBurst(0.08, 0.08+Math.random()*0.06, t, 3500+Math.random()*2000, 8);
+    }
+  }
+
+  function fallSound(){
+    const c = ensureAudio();
+    const t0 = c.currentTime;
+    // свист падения
+    const whoosh = c.createOscillator();
+    const wg = c.createGain();
+    whoosh.type = 'sine';
+    whoosh.frequency.setValueAtTime(500, t0);
+    whoosh.frequency.exponentialRampToValueAtTime(120, t0+0.9);
+    wg.gain.setValueAtTime(0.0001, t0);
+    wg.gain.linearRampToValueAtTime(0.15, t0+0.15);
+    wg.gain.linearRampToValueAtTime(0.0001, t0+0.93);
+    whoosh.connect(wg); wg.connect(sfxBus);
+    whoosh.start(t0); whoosh.stop(t0+0.95);
+    // рывок натянувшихся проводов + глухой удар в конце падения
+    setTimeout(() => {
+      noiseBurst(0.12, 0.22, 0, 350, 1.5);
+      tone(90, 0.3, 'sine', 0.2, 0);
+      tone(1400, 0.16, 'sawtooth', 0.05, 0.05);
+      tone(1550, 0.16, 'sawtooth', 0.04, 0.15);
+    }, 930);
+  }
+
+  const NEON_COLORS = ['#FF2E88','#29E7FF','#FFD23D','#6BFF7C','#FF6B35','#B15CFF','#38FFD0','#FF4D6A'];
+
+  function neonBuzz(){
+    tone(1800+Math.random()*700, 0.03, 'square', 0.035);
+    noiseBurst(0.02, 0.03, 0, 5000, 6);
+  }
+
+  function flickerOn(el, subtle){
+    const seq = subtle
+      ? [ {op:.15, hold:70}, {op:1, hold:0} ]
+      : [ {op:.15, hold:60}, {op:.9, hold:40}, {op:.1, hold:90}, {op:.85, hold:50}, {op:1, hold:0} ];
+    el.classList.add('on');
+    let i = 0;
+    (function step(){
+      if(i >= seq.length) return;
+      const s = seq[i];
+      el.style.opacity = s.op;
+      if(s.op > .5) neonBuzz();
+      i++;
+      setTimeout(step, s.hold);
+    })();
+  }
+
+  function igniteNeon(){
+    const credits = Array.from(document.querySelectorAll('.credit'));
+    credits.forEach((el, idx) => {
+      el.style.setProperty('--neon', NEON_COLORS[idx % NEON_COLORS.length]);
+      const startDelay = 200 + idx*170 + Math.random()*120;
+      setTimeout(() => flickerOn(el), startDelay);
+      // и разок само моргнёт ещё раз чуть позже — как живая вывеска
+      setTimeout(() => flickerOn(el, true), startDelay + 3200 + Math.random()*3500);
+    });
+  }
+
+  const FLICKER_SEQUENCE = [
+    { op:.2,  hold:150, buzz:true },
+    { op:1,   hold:90  },
+    { op:.15, hold:220, buzz:true },
+    { op:1,   hold:70  },
+    { op:.3,  hold:130, buzz:true },
+    { op:1,   hold:400 },
+    { op:.2,  hold:180, buzz:true },
+    { op:1,   hold:0   }
+  ];
+  function buzzTick(){
+    tone(120, 0.05, 'sawtooth', 0.08);
+    noiseBurst(0.04, 0.05, 0, 2000, 3);
+  }
+  function runFlicker(el){
+    let i = 0;
+    (function step(){
+      if(i >= FLICKER_SEQUENCE.length) return;
+      const s = FLICKER_SEQUENCE[i];
+      el.style.opacity = s.op;
+      if(s.buzz) buzzTick();
+      i++;
+      setTimeout(step, s.hold);
+    })();
+  }
+
+  function finalAmbient(){
+    const c = ensureAudio();
+    tone(80, 0.8, 'sine', 0.25, 0.3);
+    const t0 = c.currentTime + 0.3;
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = 'sine'; osc.frequency.value = 55;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(0.1, t0+1.5);
+    g.gain.linearRampToValueAtTime(0.0001, t0+6);
+    osc.connect(g); g.connect(sfxBus);
+    osc.start(t0); osc.stop(t0+6.2);
+  }
+
+  /* ---------- заглушка-картинка для пазла, пока нет реального фото ---------- */
+  function generatePlaceholderImage(){
+    const c = document.createElement('canvas');
+    c.width = 300; c.height = 300;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createLinearGradient(0,0,300,300);
+    grad.addColorStop(0,'#F0879A');
+    grad.addColorStop(1,'#8FD3E8');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,300,300);
+    ctx.fillStyle = '#FFF3E4';
+    ctx.beginPath(); ctx.arc(150,150,110,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#3B2A39';
+    ctx.beginPath(); ctx.arc(112,132,12,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(188,132,12,0,Math.PI*2); ctx.fill();
+    ctx.lineWidth = 10; ctx.strokeStyle = '#3B2A39'; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(150,150,60,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    ctx.fillStyle = '#FBCB5C';
+    ctx.beginPath(); ctx.moveTo(150,8); ctx.lineTo(112,68); ctx.lineTo(188,68); ctx.closePath(); ctx.fill();
+    return c.toDataURL('image/png');
+  }
+
+  /* ---------- пазл 3х3 с поворотом ---------- */
+  const GRID = 3;
+  const puzzleGrid = document.getElementById('puzzleGrid');
+  let tiles = [];
+
+  function buildPuzzle(imgSrc){
+    puzzleGrid.innerHTML = '';
+    tiles = [];
+    for(let row=0; row<GRID; row++){
+      for(let col=0; col<GRID; col++){
+        const tile = document.createElement('button');
+        tile.className = 'tile';
+        tile.style.backgroundImage = `url(${imgSrc})`;
+        tile.style.backgroundSize = `${GRID*100}% ${GRID*100}%`;
+        tile.style.backgroundPosition = `${col*100/(GRID-1)}% ${row*100/(GRID-1)}%`;
+        const startRot = [90,180,270][Math.floor(Math.random()*3)];
+        tile.dataset.rot = startRot;
+        tile.style.setProperty('--rot', startRot+'deg');
+        tile.addEventListener('click', () => rotateTile(tile));
+        puzzleGrid.appendChild(tile);
+        tiles.push(tile);
+      }
+    }
+  }
+
+  function rotateTile(tile){
+    const rot = (parseInt(tile.dataset.rot,10)+90)%360;
+    tile.dataset.rot = rot;
+    tile.style.setProperty('--rot', rot+'deg');
+    tone(rot===0 ? 740 : 480, 0.08, 'square', 0.18);
+    checkSolved();
+  }
+
+  function checkSolved(){
+    if(tiles.every(t => parseInt(t.dataset.rot,10)===0)){
+      onPuzzleSolved();
+    }
+  }
+
+  function launchConfetti(){
+    const colors = ['#F0879A','#8FD3E8','#FBCB5C','#A8C99B'];
+    const layer = document.getElementById('confettiLayer');
+    for(let i=0;i<28;i++){
+      const p = document.createElement('span');
+      p.className = 'confetti-piece';
+      p.style.left = Math.random()*100+'%';
+      p.style.background = colors[i%colors.length];
+      p.style.animationDelay = (Math.random()*0.35)+'s';
+      p.style.animationDuration = (1.1+Math.random()*0.9)+'s';
+      layer.appendChild(p);
+      setTimeout(()=>p.remove(), 2400);
+    }
+  }
+
+  function onPuzzleSolved(){
+    launchConfetti();
+    [523.25,659.25,783.99,1046.5].forEach((f,i) => tone(f, 0.22, 'triangle', 0.3, i*0.09));
+    setTimeout(() => {
+      document.getElementById('gateScreen').classList.add('hide');
+      document.getElementById('mainScreen').classList.add('show');
+    }, 1200);
+  }
+
+  /* ---------- дата: с др на фейковую дату ----------
+     ВСЕ тайминги — в одном месте, в миллисекундах от МОМЕНТА СТАРТА
+     (старт = когда реально начал играть звук, а если звука ещё нет —
+     от клика по кнопке). Когда пришлёшь аудио — прослушай его с секундомером
+     и просто поправь числа ниже под свои реплики. Больше нигде трогать не надо.
+  */
+  const TIMING = {
+    captions: [
+      { t: 500,   text: 'Вот, Ярик, мы тебя, короче, приглашаем на мальчишник...' },
+      { t: 4200,  text: '— Стой, стой, это же сюрприз!!' },
+      { t: 8000,  text: 'Ой бля, точно... Ярик, извини — мальчишника не будет. Отменяем.' }
+    ],
+    digitsStartDelay: 11500,   // когда цифры начинают крутиться
+    digitBaseDuration: 1500,   // сколько крутится первая (левая) цифра
+    digitStagger: 320,         // насколько дольше крутится каждая следующая
+    afterLandPause: 2200,      // пауза после приземления даты, если видео ещё нет
+    glitchDuration: 2400       // сколько трясёт/сбоит экран перед полным разгромом
+  };
+
+  const TARGET = ['2','7','0','8','2','0','2','6']; // 27.08.2026 — специально не та дата
+  const digitEls = Array.from(document.querySelectorAll('#dateReadout .digit'));
+
+  function spinColumn(el, totalDuration, targetDigit, isLast, onLanded){
+    const fastTickMs = 60;
+    const decelGaps = [110, 180, 260, 350]; // паузы между последними "тиками" — колесо ощутимо тормозит
+    const decelTotal = decelGaps.reduce((a,b) => a+b, 0);
+    const fastPhase = Math.max(totalDuration - decelTotal, 350);
+
+    const fastInterval = setInterval(() => { el.textContent = Math.floor(Math.random()*10); }, fastTickMs);
+
+    setTimeout(() => {
+      clearInterval(fastInterval);
+      let i = 0;
+      (function step(){
+        if(i < decelGaps.length){
+          el.textContent = Math.floor(Math.random()*10);
+          noiseBurst(0.03, 0.16, 0, 1800, 6);
+          tone(260 - i*20, 0.05, 'square', 0.14);
+          const gap = decelGaps[i];
+          i++;
+          setTimeout(step, gap);
+        } else {
+          el.textContent = targetDigit;
+          el.classList.add('landed');
+          if(isLast){
+            tone(120, 0.22, 'sine', 0.32);
+            noiseBurst(0.1, 0.22, 0, 260, 2);
+          } else {
+            noiseBurst(0.05, 0.24, 0, 1600, 5);
+            tone(150, 0.1, 'square', 0.2);
+          }
+          onLanded && onLanded();
+        }
+      })();
+    }, fastPhase);
+  }
+
+  function spinDigits(){
+    const totalDur = (TIMING.digitBaseDuration + (digitEls.length-1)*TIMING.digitStagger)/1000 + 0.9;
+    reelWhirr(totalDur);
+    digitEls.forEach((el, i) => {
+      const duration = TIMING.digitBaseDuration + i * TIMING.digitStagger;
+      const isLast = i === digitEls.length - 1;
+      spinColumn(el, duration, TARGET[i], isLast, isLast ? onDateLanded : null);
+    });
+  }
+
+  function playCaptions(){
+    const box = document.getElementById('captions');
+    box.textContent = '';
+    TIMING.captions.forEach(line => {
+      setTimeout(() => {
+        box.textContent = line.text;
+        box.classList.remove('show');
+        void box.offsetWidth;
+        box.classList.add('show');
+      }, line.t);
+    });
+  }
+
+  function startSequence(){
+    duckMusic(0.12, 900); // музыка уходит на фон под голос
+    playCaptions();
+    setTimeout(spinDigits, TIMING.digitsStartDelay);
+  }
+
+  document.getElementById('openBtn').addEventListener('click', (e) => {
+    e.target.disabled = true;
+    e.target.textContent = 'Слушай...';
+
+    if(ASSETS.voiceAudio){
+      const audio = new Audio(ASSETS.voiceAudio);
+      // старт отсчёта — от момента, когда звук реально начал играть
+      audio.play().then(startSequence).catch(startSequence);
+    } else {
+      startSequence();
+    }
+  });
+
+  function onDateLanded(){
+    if(ASSETS.memeVideo){
+      const v = document.createElement('video');
+      v.src = ASSETS.memeVideo;
+      v.className = 'meme-video';
+      v.autoplay = true;
+      v.playsInline = true;
+      document.body.appendChild(v);
+      const advance = () => { v.remove(); startBreakSequence(); };
+      v.addEventListener('ended', advance);
+      v.play().catch(advance);
+    } else {
+      document.getElementById('stamp').classList.add('show');
+      tone(200, 0.18, 'sawtooth', 0.2);
+      tone(170, 0.18, 'sawtooth', 0.16, 0.06);
+      setTimeout(startBreakSequence, TIMING.afterLandPause);
+    }
+  }
+
+  function startBreakSequence(){
+    stopMusic(500); // музыка обрывается в тишину — для драмы
+
+    document.body.classList.add('glitching');   // трещины прорисовываются, экран трясёт
+    const crackDelays = [0,50,120,180,260,340,400,460,520,580];
+    crackDelays.forEach((ms, idx) => setTimeout(() => {
+      noiseBurst(0.05, 0.12, 0, 4200+Math.random()*600, 4);
+      if(idx % 3 === 0) tone(90+idx*4, 0.12, 'sawtooth', 0.05, 0); // низкий скрип напряжения
+    }, ms));
+    riseTension(TIMING.glitchDuration/1000);
+
+    setTimeout(() => {
+      document.body.classList.add('broken'); // осколки разлетаются, финал
+      shatterSound();
+      finalAmbient();
+      fallSound(); // табличка «Жди» падает и повисает на проводах
+      setTimeout(() => runFlicker(document.querySelector('.sign-board')), 1000);
+      igniteNeon(); // имена организаторов загораются неоном вразнобой
+      startLiveWires(); // провода оживают и начинают дышать, привязанные к болтам
+    }, TIMING.glitchDuration);
+  }
+
+  /* ==========================================================
+     ЖИВЫЕ ПРОВОДА — два обрывка, уже висящих сверху экрана
+     (не падают вместе с табличкой). Каждый кадр:
+       1) берём реальные экранные координаты болта на табличке
+       2) берём неподвижную точку крепления вверху экрана
+       3) рисуем провисающую кривую между ними (квадратичный Безье)
+       4) точка провисания слегка "дышит" по синусоиде — рандомная
+          фаза и амплитуда у каждого провода своя, чтобы не были
+          зеркальными близнецами
+  ========================================================== */
+  let wiresRAF = null;
+  const wireState = {
+    l: { anchorXVW: 22, anchorYPX: -40, phase: Math.random()*Math.PI*2, speed: 0.9,  sag: 34 },
+    r: { anchorXVW: 84, anchorYPX: -20, phase: Math.random()*Math.PI*2, speed: 1.15, sag: 26 }
+  };
+
+  function drawWire(pathEl, boltEl, state, t){
+    const boltRect = boltEl.getBoundingClientRect();
+    const bx = boltRect.left + boltRect.width/2;
+    const by = boltRect.top + boltRect.height/2;
+    const ax = window.innerWidth * (state.anchorXVW/100);
+    const ay = state.anchorYPX;
+
+    // средняя точка проседает вниз (провис) и покачивается вбок — "дыхание"
+    const midX = (ax+bx)/2 + Math.sin(t*state.speed + state.phase) * 10;
+    const midY = (ay+by)/2 + state.sag + Math.sin(t*state.speed*0.6 + state.phase*1.7) * 6;
+
+    pathEl.setAttribute('d', `M ${ax} ${ay} Q ${midX} ${midY} ${bx} ${by}`);
+  }
+
+  function startLiveWires(){
+    const wireL = document.getElementById('wireL');
+    const wireR = document.getElementById('wireR');
+    const boltL = document.getElementById('boltL');
+    const boltR = document.getElementById('boltR');
+
+    function frame(ts){
+      const t = ts/1000;
+      drawWire(wireL, boltL, wireState.l, t);
+      drawWire(wireR, boltR, wireState.r, t);
+      wiresRAF = requestAnimationFrame(frame);
+    }
+    wiresRAF = requestAnimationFrame(frame);
+  }
+
+  function prepareCrackPaths(){
+    document.querySelectorAll('.crack-svg path').forEach(p => {
+      const len = p.getTotalLength();
+      p.style.strokeDasharray = len;
+      p.style.strokeDashoffset = len;
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    buildPuzzle(ASSETS.puzzleImage || generatePlaceholderImage());
+    prepareCrackPaths();
+  });
+</script>
+</body>
+</html>
